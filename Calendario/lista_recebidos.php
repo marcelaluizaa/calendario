@@ -25,7 +25,6 @@ try {
     echo "Erro na conexão: " . $e->getMessage();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -58,7 +57,7 @@ try {
                     <th>Título</th>
                     <th>Horário Inicial</th>
                     <th>Cor</th>
-                    <th>Início</th>
+                    <th>Data</th>
                     <th>Horário Final</th>
                     <th>Alterar</th>
                     <th>Deletar</th>
@@ -70,13 +69,19 @@ try {
                     <tr>
                        <td><?php echo htmlspecialchars($evento['id_evento']); ?></td>
                        <td><?php echo htmlspecialchars($evento['titulo']); ?></td>
-                       <td><?php echo htmlspecialchars($evento['horario']); ?></td>
+                       <td><?php echo htmlspecialchars(date('H:i', strtotime($evento['horario']))); ?></td>
                        <td>
                            <span style="display:inline-block; width: 20px; height: 20px; background-color: <?php echo htmlspecialchars($evento['cor']); ?>;"></span>
                            <?php echo htmlspecialchars($evento['cor']); ?>
                        </td>
-                       <td><?php echo htmlspecialchars($evento['inicio']); ?></td>
-                       <td><?php echo htmlspecialchars($evento['fim_horario']); ?></td>
+                       <td>
+                           <?php
+                           $inicio = $evento['inicio'];
+                           // Exibir a data no formato d/m/Y se for diferente de '0000-00-00 00:00:00'
+                           echo ($inicio && $inicio != '0000-00-00 00:00:00') ? date('d/m/Y', strtotime($inicio)) : '';
+                           ?>
+                       </td>
+                       <td><?php echo htmlspecialchars(date('H:i', strtotime($evento['fim_horario']))); ?></td>
                        <td><a class="btn btn-primary" href="alterar.php?id_evento=<?php echo htmlspecialchars($evento['id_evento']); ?>">Alterar</a></td>
                        <td><a class="btn btn-danger" href="deletar.php?id_evento=<?php echo htmlspecialchars($evento['id_evento']); ?>" onclick="return confirm('Tem certeza que deseja deletar este evento?');">Deletar</a></td>
                     </tr>
