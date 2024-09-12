@@ -1,10 +1,9 @@
 CREATE TABLE `calendario` (
   `id_evento` INT NOT NULL AUTO_INCREMENT,
   `titulo` VARCHAR(255) NOT NULL,
-  `horario` TIME NOT NULL,
   `cor` VARCHAR(7) NOT NULL DEFAULT '#007bff',
-  `inicio` DATETIME NOT NULL,
-  `fim` DATETIME NOT NULL,
-  `fim_horario` TIME NOT NULL,
-  PRIMARY KEY (`id_evento`)
+  `inicio` DATETIME NOT NULL,   -- Data e hora de início do evento
+  `fim` DATETIME NOT NULL,      -- Data e hora de fim do evento
+  PRIMARY KEY (`id_evento`),
+  UNIQUE KEY `inicio_fim` (`inicio`, `fim`) -- Garante que não haja eventos com o mesmo horário de início e fim
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

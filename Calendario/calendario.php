@@ -77,119 +77,149 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'pt-br',
-        selectable: true,
-        editable: true,
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        select: function(info) {
-            document.getElementById('eventForm').reset();
-            document.getElementById('eventStart').value = info.startStr;
-            document.getElementById('eventEndTime').value = ''; // Limpar horário final
-            var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-            eventModal.show();
-        },
-        events: 'fetch_eventos.php', // Opcional: carregar eventos já existentes
-        eventColor: '#378006'
-    });
-    calendar.render();
-
-    // Função para gerar horários
-    function gerarHorarios(inicio, intervalo, quantidade) {
-        let horarios = [];
-        let horaAtual = new Date(inicio);
-
-        for (let i = 0; i < quantidade; i++) {
-            let horas = String(horaAtual.getHours()).padStart(2, '0');
-            let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
-            horarios.push(`${horas}:${minutos}`);
-            horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
-        }
-        return horarios;
-    }
-
-    // Popula o select de horários
-    const horaInicio = new Date();
-    horaInicio.setHours(8, 30, 0, 0);  // Horário inicial
-    const intervalo = 35;  // Intervalo em minutos
-    const quantidadeHorarios = 20;  // Total de horários que deseja gerar
-
-    const horarios = gerarHorarios(horaInicio, intervalo, quantidadeHorarios);
-    const selectHorario = document.getElementById('eventTime');
-
-    horarios.forEach(horario => {
-        let option = document.createElement('option');
-        option.value = horario;
-        option.textContent = horario;
-        selectHorario.appendChild(option);
-    });
-
-    // Função para calcular o fim do evento (35 minutos após o horário de início)
-    document.getElementById('eventTime').addEventListener('change', function() {
-        var selectedTime = this.value;
-        var [hours, minutes] = selectedTime.split(':').map(Number);
-        
-        var endTime = new Date();
-        endTime.setHours(hours);
-        endTime.setMinutes(minutes + 35); // Adiciona 35 minutos
-
-        var endHours = String(endTime.getHours()).padStart(2, '0');
-        var endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-        document.getElementById('eventEndTime').value = `${endHours}:${endMinutes}`;
-    });
-
-    // Função para salvar o evento
-    document.getElementById('saveEventBtn').addEventListener('click', function() {
-        var titulo = document.getElementById('eventTitle').value.trim();
-        var horario = document.getElementById('eventTime').value;
-        var fim_horario = document.getElementById('eventEndTime').value;
-        var cor = document.getElementById('eventColor').value;
-        var inicio = document.getElementById('eventStart').value;
-
-        if (titulo && horario && fim_horario) {
-            // Criar objeto com os dados do evento
-            var eventData = {
-                titulo: titulo,
-                horario: horario,
-                cor: cor,
-                inicio: inicio,
-                fim_horario: fim_horario
-            };
-
-            // Enviar dados ao backend PHP usando fetch API
-            fetch('salvar_evento.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pt-br',
+                selectable: true,
+                editable: true,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                body: JSON.stringify(eventData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    // Redirecionar para a página de eventos salvos
-                    window.location.href = 'lista_recebidos.php'; 
-                } else {
-                    alert(data.message);
+                select: function(info) {
+                    document.getElementById('eventForm').reset();
+                    document.getElementById('eventStart').value = info.startStr;
+                    document.getElementById('eventEndTime').value = ''; // Limpar horário final
+                    populateHorarios();
+                    var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                    eventModal.show();
+                },
+                events: 'fetch_eventos.php', // Opcional: carregar eventos já existentes
+                eventColor: '#378006'
+            });
+            calendar.render();
+
+            // Função para gerar horários
+            function gerarHorarios(inicio, intervalo, fim1, fim2, quantidade) {
+                let horarios = [];
+                let horaAtual = new Date(inicio);
+
+                // Intervalo 1: de 08:30 até 11:25
+                while (horaAtual <= fim1) {
+                    let horas = String(horaAtual.getHours()).padStart(2, '0');
+                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
+                    horarios.push(`${horas}:${minutos}`);
+                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
                 }
-            })
-            .catch(error => console.error('Erro:', error));
-            
-            // Esconder o modal
-            var eventModal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
-            eventModal.hide();
-        } else {
-            alert('O título, horário e horário final do evento são obrigatórios.');
-        }
-    });
-});
+
+                // Pular intervalo de almoço: de 11:25 até 13:10
+                horaAtual = new Date(fim1);
+                horaAtual.setHours(13, 10, 0, 0);
+
+                // Intervalo 2: de 13:10 até 17:15
+                while (horaAtual <= fim2) {
+                    let horas = String(horaAtual.getHours()).padStart(2, '0');
+                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
+                    horarios.push(`${horas}:${minutos}`);
+                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
+                }
+
+                return horarios;
+            }
+
+            // Função para atualizar a lista de horários disponíveis
+            function populateHorarios() {
+                fetch('get_horarios_ocupados.php')
+                    .then(response => response.json())
+                    .then(horariosOcupados => {
+                        const horaInicio = new Date();
+                        horaInicio.setHours(8, 30, 0, 0);  // Horário inicial
+                        const intervalo = 35;  // Intervalo em minutos
+                        const fim1 = new Date();
+                        fim1.setHours(11, 25, 0, 0);  // Fim do primeiro intervalo
+                        const fim2 = new Date();
+                        fim2.setHours(17, 15, 0, 0);  // Fim do segundo intervalo
+
+                        const horarios = gerarHorarios(horaInicio, intervalo, fim1, fim2);
+                        const selectHorario = document.getElementById('eventTime');
+                        selectHorario.innerHTML = ''; // Limpar opções existentes
+
+                        horarios.forEach(horario => {
+                            let option = document.createElement('option');
+                            option.value = horario;
+                            option.textContent = horario;
+                            if (horariosOcupados.includes(horario)) {
+                                option.disabled = true;
+                                option.textContent += ' (horário indisponível)';
+                            }
+                            selectHorario.appendChild(option);
+                        });
+                    });
+            }
+
+            // Função para calcular o fim do evento (35 minutos após o horário de início)
+            document.getElementById('eventTime').addEventListener('change', function() {
+                var selectedTime = this.value;
+                if (this.selectedOptions[0].disabled) {
+                    alert('Horário indisponível');
+                    this.value = ''; // Limpar seleção se horário estiver indisponível
+                    document.getElementById('eventEndTime').value = ''; // Limpar horário final
+                } else {
+                    var [hours, minutes] = selectedTime.split(':').map(Number);
+                    var endTime = new Date();
+                    endTime.setHours(hours);
+                    endTime.setMinutes(minutes + 35); // Adiciona 35 minutos
+
+                    var endHours = String(endTime.getHours()).padStart(2, '0');
+                    var endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+                    document.getElementById('eventEndTime').value = `${endHours}:${endMinutes}`;
+                }
+            });
+
+            // Função para salvar o evento
+            document.getElementById('saveEventBtn').addEventListener('click', function() {
+                var titulo = document.getElementById('eventTitle').value.trim();
+                var horario = document.getElementById('eventTime').value;
+                var fim_horario = document.getElementById('eventEndTime').value;
+                var cor = document.getElementById('eventColor').value;
+                var inicio = document.getElementById('eventStart').value;
+
+                if (titulo && horario && fim_horario) {
+                    // Criar objeto com os dados do evento
+                    var eventData = {
+                        titulo: titulo,
+                        horario: horario,
+                        cor: cor,
+                        inicio: inicio,
+                        fim_horario: fim_horario
+                    };
+
+                    // Enviar dados ao backend PHP usando fetch API
+                    fetch('salvar_evento.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(eventData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            // Redirecionar para lista_recebidos.php após sucesso
+                            window.location.href = 'lista_recebidos.php';
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => console.error('Erro:', error));
+                } else {
+                    alert('O título, horário e horário final do evento são obrigatórios.');
+                }
+            });
+        });
     </script>
 </body>
 </html>
