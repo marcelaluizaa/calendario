@@ -96,17 +96,18 @@ document.addEventListener('DOMContentLoaded', function() {
             var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
             eventModal.show();
         },
-        events: 'fetch_eventos.php', // Opcional: carregar eventos já existentes
+        events: 'fetch_eventos.php',
         eventColor: '#378006'
     });
     calendar.render();
 
     // Função para gerar horários
-    function gerarHorarios(inicio, intervalo, quantidade) {
+    function gerarHorarios(inicio, fim, intervalo) {
         let horarios = [];
         let horaAtual = new Date(inicio);
+        let horaFim = new Date(fim);
 
-        for (let i = 0; i < quantidade; i++) {
+        while (horaAtual <= horaFim) {
             let horas = String(horaAtual.getHours()).padStart(2, '0');
             let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
             horarios.push(`${horas}:${minutos}`);
@@ -115,13 +116,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return horarios;
     }
 
-    // Popula o select de horários
-    const horaInicio = new Date();
-    horaInicio.setHours(8, 30, 0, 0);  // Horário inicial
-    const intervalo = 35;  // Intervalo em minutos
-    const quantidadeHorarios = 20;  // Total de horários que deseja gerar
+    // Horários antes do intervalo de almoço
+    const inicioManha = new Date();
+    inicioManha.setHours(8, 30, 0, 0); // Horário inicial
+    const fimManha = new Date();
+    fimManha.setHours(11, 25, 0, 0); // Horário final da manhã
 
-    const horarios = gerarHorarios(horaInicio, intervalo, quantidadeHorarios);
+    // Horários depois do intervalo de almoço
+    const inicioTarde = new Date();
+    inicioTarde.setHours(13, 10, 0, 0); // Horário inicial da tarde
+    const fimTarde = new Date();
+    fimTarde.setHours(17, 15, 0, 0); // Horário final da tarde
+
+    const intervalo = 35;  // Intervalo em minutos
+
+    const horariosManha = gerarHorarios(inicioManha, fimManha, intervalo);
+    const horariosTarde = gerarHorarios(inicioTarde, fimTarde, intervalo);
+
+    // Combina os horários da manhã e da tarde
+    const horarios = horariosManha.concat(horariosTarde);
+
+    // Popula o select de horários
     const selectHorario = document.getElementById('eventTime');
 
     horarios.forEach(horario => {
@@ -154,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var inicio = document.getElementById('eventStart').value;
 
         if (titulo && horario && fim_horario) {
-            // Criar objeto com os dados do evento
             var eventData = {
                 titulo: titulo,
                 horario: horario,
@@ -163,7 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 fim_horario: fim_horario
             };
 
-            // Enviar dados ao backend PHP usando fetch API
             fetch('salvar_evento.php', {
                 method: 'POST',
                 headers: {
@@ -174,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === "success") {
-                    // Redirecionar para a página de eventos salvos
                     window.location.href = 'lista_recebidos.php'; 
                 } else {
                     alert(data.message);
@@ -182,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Erro:', error));
             
-            // Esconder o modal
             var eventModal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
             eventModal.hide();
         } else {
@@ -190,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
     </script>
 </body>
 </html>

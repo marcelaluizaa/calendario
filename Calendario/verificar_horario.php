@@ -15,6 +15,12 @@ try {
     $data = isset($_GET['data']) ? $_GET['data'] : '';
 
     if ($horario && $data) {
+        // Validação de horário
+        if (!preg_match('/^([01]\d|2[0-3]):([0-5]\d)$/', $horario)) {
+            echo json_encode(["status" => "erro", "message" => "Horário inválido."]);
+            exit;
+        }
+
         // Verificar se o horário está ocupado
         $sql = "SELECT COUNT(*) FROM calendario WHERE DATE(inicio) = :data AND TIME(horario) = :horario";
         $stmt = $conn->prepare($sql);
