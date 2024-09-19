@@ -33,7 +33,11 @@ try {
         // Verificar se o horário já está ocupado
         $sqlCheck = "SELECT COUNT(*) FROM calendario 
                      WHERE inicio = :inicio 
+<<<<<<< HEAD
                      AND (horario < :fim_horario AND fim_horario > :horario)";
+=======
+                     AND (horario <= :fim_horario AND fim_horario >= :horario)";
+>>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
         $stmtCheck = $conn->prepare($sqlCheck);
         $stmtCheck->bindParam(':inicio', $inicio);
         $stmtCheck->bindParam(':horario', $horario);
@@ -59,6 +63,7 @@ try {
 
             // Executar a consulta e verificar o resultado
             if ($stmtInsert->execute()) {
+<<<<<<< HEAD
                 // Obter o ID do evento recém inserido
                 $eventoId = $conn->lastInsertId();
 
@@ -75,6 +80,10 @@ try {
                         "horario" => $horario
                     ]
                 ]);
+=======
+                // Retornar resposta de sucesso
+                echo json_encode(["status" => "success", "message" => "Evento salvo com sucesso!"]);
+>>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
             } else {
                 // Retornar mensagem de erro
                 echo json_encode(["status" => "error", "message" => "Erro ao salvar o evento."]);

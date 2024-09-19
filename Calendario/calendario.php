@@ -171,8 +171,13 @@
             }
 
             // Função para atualizar a lista de horários disponíveis
+<<<<<<< HEAD
             function populateHorarios(dataSelecionada) {
                 fetch('get_horarios_ocupados.php?data=' + dataSelecionada)
+=======
+            function populateHorarios() {
+                fetch('get_horarios_ocupados.php')
+>>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
                     .then(response => response.json())
                     .then(horariosOcupados => {
                         const horaInicio = new Date();
@@ -248,6 +253,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === "success") {
+<<<<<<< HEAD
                             // Se o evento for salvo corretamente, adicionar ao calendário
                             var novoEvento = {
                                 id: data.evento.id,
@@ -266,6 +272,10 @@
                             // Fecha o modal
                             var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
                             eventModal.hide();
+=======
+                            // Redirecionar para lista_recebidos.php após sucesso
+                            window.location.href = 'lista_recebidos.php';
+>>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
                         } else {
                             alert(data.message);
                         }
