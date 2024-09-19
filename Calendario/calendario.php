@@ -16,14 +16,50 @@
             background-color: #f8f9fa;
         }
         #calendar-container {
-            max-width: 900px;
+            max-width: 1800px;
             margin: 0 auto;
         }
         #calendar {
-            max-width: 900px;
+            max-width: 1300px;
             margin: 0 auto;
         }
+        .fc-daygrid-day-frame {
+            position: relative;
+        }
+        .time-slot {
+            height: calc(100% / 14); /* Divida o dia em 14 partes */
+            border: 1px solid #ddd;
+            position: absolute;
+            left: 0;
+            right: 0;
+            overflow: hidden;
+        }
+        .time-slot:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+        .time-slot.selected {
+            background-color: #ffdddd;
+        }
+        .time-slot .time-label {
+            position: absolute;
+            top: 0;
+            left: 5px;
+            color: #333;
+            font-size: 12px;
+        }
+        .time-slot .event-info {
+            position: absolute;
+            top: 50%;
+            left: 5px;
+            color: #fff;
+            background-color: #d9534f;
+            padding: 2px 5px;
+            border-radius: 3px;
+            transform: translateY(-50%);
+            font-size: 12px;
+        }
     </style>
+
 </head>
 <body>
     <div id="calendar-container">
@@ -77,131 +113,169 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'pt-br',
-        selectable: true,
-        editable: true,
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        select: function(info) {
-            document.getElementById('eventForm').reset();
-            document.getElementById('eventStart').value = info.startStr;
-            document.getElementById('eventEndTime').value = ''; // Limpar horário final
-            var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-            eventModal.show();
-        },
-        events: 'fetch_eventos.php',
-        eventColor: '#378006'
-    });
-    calendar.render();
-
-    // Função para gerar horários
-    function gerarHorarios(inicio, fim, intervalo) {
-        let horarios = [];
-        let horaAtual = new Date(inicio);
-        let horaFim = new Date(fim);
-
-        while (horaAtual <= horaFim) {
-            let horas = String(horaAtual.getHours()).padStart(2, '0');
-            let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
-            horarios.push(`${horas}:${minutos}`);
-            horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
-        }
-        return horarios;
-    }
-
-    // Horários antes do intervalo de almoço
-    const inicioManha = new Date();
-    inicioManha.setHours(8, 30, 0, 0); // Horário inicial
-    const fimManha = new Date();
-    fimManha.setHours(11, 25, 0, 0); // Horário final da manhã
-
-    // Horários depois do intervalo de almoço
-    const inicioTarde = new Date();
-    inicioTarde.setHours(13, 10, 0, 0); // Horário inicial da tarde
-    const fimTarde = new Date();
-    fimTarde.setHours(17, 15, 0, 0); // Horário final da tarde
-
-    const intervalo = 35;  // Intervalo em minutos
-
-    const horariosManha = gerarHorarios(inicioManha, fimManha, intervalo);
-    const horariosTarde = gerarHorarios(inicioTarde, fimTarde, intervalo);
-
-    // Combina os horários da manhã e da tarde
-    const horarios = horariosManha.concat(horariosTarde);
-
-    // Popula o select de horários
-    const selectHorario = document.getElementById('eventTime');
-
-    horarios.forEach(horario => {
-        let option = document.createElement('option');
-        option.value = horario;
-        option.textContent = horario;
-        selectHorario.appendChild(option);
-    });
-
-    // Função para calcular o fim do evento (35 minutos após o horário de início)
-    document.getElementById('eventTime').addEventListener('change', function() {
-        var selectedTime = this.value;
-        var [hours, minutes] = selectedTime.split(':').map(Number);
-        
-        var endTime = new Date();
-        endTime.setHours(hours);
-        endTime.setMinutes(minutes + 35); // Adiciona 35 minutos
-
-        var endHours = String(endTime.getHours()).padStart(2, '0');
-        var endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-        document.getElementById('eventEndTime').value = `${endHours}:${endMinutes}`;
-    });
-
-    // Função para salvar o evento
-    document.getElementById('saveEventBtn').addEventListener('click', function() {
-        var titulo = document.getElementById('eventTitle').value.trim();
-        var horario = document.getElementById('eventTime').value;
-        var fim_horario = document.getElementById('eventEndTime').value;
-        var cor = document.getElementById('eventColor').value;
-        var inicio = document.getElementById('eventStart').value;
-
-        if (titulo && horario && fim_horario) {
-            var eventData = {
-                titulo: titulo,
-                horario: horario,
-                cor: cor,
-                inicio: inicio,
-                fim_horario: fim_horario
-            };
-
-            fetch('salvar_evento.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pt-br',
+                selectable: true,
+                editable: true,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    
                 },
-                body: JSON.stringify(eventData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    window.location.href = 'lista_recebidos.php'; 
-                } else {
-                    alert(data.message);
+                events: 'fetch_eventos.php', // Carregar eventos já existentes
+                select: function(info) {
+                    document.getElementById('eventForm').reset();
+                    document.getElementById('eventStart').value = info.startStr;
+                    document.getElementById('eventEndTime').value = ''; // Limpar horário final
+                    populateHorarios(info.startStr); // Atualizar horários de acordo com o dia selecionado
+                    var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                    eventModal.show();
+                },
+                eventContent: function(arg) {
+                    let customHtml = document.createElement('div');
+                    customHtml.innerHTML = `<b>${arg.event.title}</b><br>Horário selecionado: ${arg.event.extendedProps.horario}`;
+                    return { domNodes: [customHtml] };
                 }
-            })
-            .catch(error => console.error('Erro:', error));
-            
-            var eventModal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
-            eventModal.hide();
-        } else {
-            alert('O título, horário e horário final do evento são obrigatórios.');
-        }
-    });
-});
+            });
+            calendar.render();
 
+            // Função para gerar horários
+            function gerarHorarios(inicio, intervalo, fim1, fim2) {
+                let horarios = [];
+                let horaAtual = new Date(inicio);
+
+                // Intervalo 1: de 08:30 até 11:25
+                while (horaAtual <= fim1) {
+                    let horas = String(horaAtual.getHours()).padStart(2, '0');
+                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
+                    horarios.push(`${horas}:${minutos}`);
+                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
+                }
+
+                // Pular intervalo de almoço: de 11:25 até 13:10
+                horaAtual = new Date(fim1);
+                horaAtual.setHours(13, 10, 0, 0);
+
+                // Intervalo 2: de 13:10 até 17:15
+                while (horaAtual <= fim2) {
+                    let horas = String(horaAtual.getHours()).padStart(2, '0');
+                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
+                    horarios.push(`${horas}:${minutos}`);
+                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
+                }
+
+                return horarios;
+            }
+
+            // Função para atualizar a lista de horários disponíveis
+            function populateHorarios(dataSelecionada) {
+                fetch('get_horarios_ocupados.php?data=' + dataSelecionada)
+                    .then(response => response.json())
+                    .then(horariosOcupados => {
+                        const horaInicio = new Date();
+                        horaInicio.setHours(8, 30, 0, 0);  // Horário inicial
+                        const intervalo = 35;  // Intervalo em minutos
+                        const fim1 = new Date();
+                        fim1.setHours(11, 25, 0, 0);  // Fim do primeiro intervalo
+                        const fim2 = new Date();
+                        fim2.setHours(17, 15, 0, 0);  // Fim do segundo intervalo
+
+                        const horarios = gerarHorarios(horaInicio, intervalo, fim1, fim2);
+                        const selectHorario = document.getElementById('eventTime');
+                        selectHorario.innerHTML = ''; // Limpar opções existentes
+
+                        horarios.forEach(horario => {
+                            let option = document.createElement('option');
+                            option.value = horario;
+                            option.textContent = horario;
+                            if (horariosOcupados.includes(horario)) {
+                                option.disabled = true;
+                                option.textContent += ' (horário indisponível)';
+                            }
+                            selectHorario.appendChild(option);
+                        });
+                    });
+            }
+
+            // Função para calcular o fim do evento (35 minutos após o horário de início)
+            document.getElementById('eventTime').addEventListener('change', function() {
+                var selectedTime = this.value;
+                if (this.selectedOptions[0].disabled) {
+                    alert('Horário indisponível');
+                    this.value = ''; // Limpar seleção se horário estiver indisponível
+                    document.getElementById('eventEndTime').value = ''; // Limpar horário final
+                } else {
+                    var [hours, minutes] = selectedTime.split(':').map(Number);
+                    var endTime = new Date();
+                    endTime.setHours(hours);
+                    endTime.setMinutes(minutes + 35); // Adiciona 35 minutos
+
+                    var endHours = String(endTime.getHours()).padStart(2, '0');
+                    var endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+                    document.getElementById('eventEndTime').value = `${endHours}:${endMinutes}`;
+                }
+            });
+
+            // Função para salvar o evento
+            document.getElementById('saveEventBtn').addEventListener('click', function() {
+                var titulo = document.getElementById('eventTitle').value.trim();
+                var horario = document.getElementById('eventTime').value;
+                var fim_horario = document.getElementById('eventEndTime').value;
+                var cor = document.getElementById('eventColor').value;
+                var inicio = document.getElementById('eventStart').value;
+
+                if (titulo && horario && fim_horario) {
+                    // Criar objeto com os dados do evento
+                    var eventData = {
+                        titulo: titulo,
+                        horario: horario,
+                        cor: cor,
+                        inicio: inicio,
+                        fim_horario: fim_horario
+                    };
+
+                    // Enviar dados ao backend PHP usando fetch API
+                    fetch('salvar_evento.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(eventData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            // Se o evento for salvo corretamente, adicionar ao calendário
+                            var novoEvento = {
+                                id: data.evento.id,
+                                title: data.evento.title,
+                                start: data.evento.start,
+                                end: data.evento.end,
+                                color: data.evento.color,
+                                extendedProps: {
+                                    horario: data.evento.horario
+                                }
+                            };
+
+                            // Adiciona o evento ao calendário
+                            calendar.addEvent(novoEvento);
+
+                            // Fecha o modal
+                            var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                            eventModal.hide();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => console.error('Erro:', error));
+                } else {
+                    alert('O título, horário e horário final do evento são obrigatórios.');
+                }
+            });
+        });
     </script>
 </body>
 </html>
