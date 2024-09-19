@@ -16,12 +16,29 @@
             background-color: #f8f9fa;
         }
         #calendar-container {
-            max-width: 900px;
+            max-width: 2000px;
             margin: 0 auto;
         }
         #calendar {
-            max-width: 900px;
+            max-width: 1800px;
             margin: 0 auto;
+        }
+        .horario-ocupado {
+            color: red;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .fc-event {
+            position: relative;
+        }
+        /* Define uma altura fixa para os dias no view DayGrid */
+        .fc-daygrid-day-frame {
+            height: 200px; /* Ajuste o valor conforme necessário */
+            overflow: hidden; /* Para evitar que o conteúdo extrapole a altura definida */
+        }
+        /* Ajusta a altura da área de conteúdo para eventos */
+        .fc-daygrid-day-top {
+            height: 10px; /* Ajuste a altura do cabeçalho do dia se necessário */
         }
     </style>
 </head>
@@ -82,82 +99,72 @@
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'pt-br',
-                selectable: true,
-                editable: true,
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                   
                 },
-                select: function(info) {
+                events: {
+                    url: 'fetch_eventos.php',
+                    failure: function() {
+                        alert('Erro ao carregar eventos!');
+                    }
+                },
+                dateClick: function(info) {
+                    // Preenche o campo de data inicial e atualiza os horários disponíveis
+                    document.getElementById('eventStart').value = info.dateStr;
+                    updateAvailableTimes(info.dateStr);
+
+                    // Limpa o formulário do modal
                     document.getElementById('eventForm').reset();
-                    document.getElementById('eventStart').value = info.startStr;
-                    document.getElementById('eventEndTime').value = ''; // Limpar horário final
-                    populateHorarios();
+                    document.getElementById('eventEndTime').value = '';
+                    document.getElementById('eventModalLabel').textContent = 'Adicionar Evento';
+
+                    // Mostra o modal
                     var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
                     eventModal.show();
                 },
-                events: 'fetch_eventos.php', // Opcional: carregar eventos já existentes
-                eventColor: '#378006'
+                viewDidMount: function(view) {
+                    // Ajusta a altura dos dias no início
+                    const dayCells = document.querySelectorAll('.fc-daygrid-day-frame');
+                    let maxHeight = 0;
+
+                    // Calcula a altura máxima
+                    dayCells.forEach(cell => {
+                        const height = cell.clientHeight;
+                        if (height > maxHeight) {
+                            maxHeight = height;
+                        }
+                    });
+
+                    // Define a altura máxima para todas as células
+                    dayCells.forEach(cell => {
+                        cell.style.height = `${maxHeight}px`;
+                    });
+                }
             });
+
             calendar.render();
 
-            // Função para gerar horários
-            function gerarHorarios(inicio, intervalo, fim1, fim2, quantidade) {
-                let horarios = [];
-                let horaAtual = new Date(inicio);
-
-                // Intervalo 1: de 08:30 até 11:25
-                while (horaAtual <= fim1) {
-                    let horas = String(horaAtual.getHours()).padStart(2, '0');
-                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
-                    horarios.push(`${horas}:${minutos}`);
-                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
-                }
-
-                // Pular intervalo de almoço: de 11:25 até 13:10
-                horaAtual = new Date(fim1);
-                horaAtual.setHours(13, 10, 0, 0);
-
-                // Intervalo 2: de 13:10 até 17:15
-                while (horaAtual <= fim2) {
-                    let horas = String(horaAtual.getHours()).padStart(2, '0');
-                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
-                    horarios.push(`${horas}:${minutos}`);
-                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
-                }
-
-                return horarios;
-            }
-
             // Função para atualizar a lista de horários disponíveis
-            function populateHorarios() {
-                fetch('get_horarios_ocupados.php')
+            function updateAvailableTimes(date) {
+                fetch(`fetch_available_times.php?date=${date}`)
                     .then(response => response.json())
-                    .then(horariosOcupados => {
-                        const horaInicio = new Date();
-                        horaInicio.setHours(8, 30, 0, 0);  // Horário inicial
-                        const intervalo = 35;  // Intervalo em minutos
-                        const fim1 = new Date();
-                        fim1.setHours(11, 25, 0, 0);  // Fim do primeiro intervalo
-                        const fim2 = new Date();
-                        fim2.setHours(17, 15, 0, 0);  // Fim do segundo intervalo
-
-                        const horarios = gerarHorarios(horaInicio, intervalo, fim1, fim2);
-                        const selectHorario = document.getElementById('eventTime');
-                        selectHorario.innerHTML = ''; // Limpar opções existentes
-
-                        horarios.forEach(horario => {
-                            let option = document.createElement('option');
-                            option.value = horario;
-                            option.textContent = horario;
-                            if (horariosOcupados.includes(horario)) {
-                                option.disabled = true;
-                                option.textContent += ' (horário indisponível)';
-                            }
-                            selectHorario.appendChild(option);
-                        });
-                    });
+                    .then(data => {
+                        if (data.status === 'success') {
+                            var select = document.getElementById('eventTime');
+                            select.innerHTML = ''; // Limpa opções existentes
+                            data.times.forEach(time => {
+                                var option = document.createElement('option');
+                                option.value = time;
+                                option.textContent = time;
+                                select.appendChild(option);
+                            });
+                        } else {
+                            alert('Erro ao carregar horários disponíveis.');
+                        }
+                    })
+                    .catch(error => console.error('Erro ao carregar horários disponíveis:', error));
             }
 
             // Função para calcular o fim do evento (35 minutos após o horário de início)
@@ -192,9 +199,9 @@
                     var eventData = {
                         titulo: titulo,
                         horario: horario,
-                        cor: cor,
                         inicio: inicio,
-                        fim_horario: fim_horario
+                        fim_horario: fim_horario,
+                        cor: cor
                     };
 
                     // Enviar dados ao backend PHP usando fetch API
@@ -208,15 +215,29 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === "success") {
-                            // Redirecionar para lista_recebidos.php após sucesso
-                            window.location.href = 'lista_recebidos.php';
+                            // Se o evento for salvo corretamente, adicionar ao calendário
+                            var novoEvento = {
+                                id: data.evento.id,
+                                title: data.evento.title,
+                                start: data.evento.start,
+                                end: data.evento.end,
+                                color: data.evento.color
+                            };
+                            calendar.addEvent(novoEvento);
+
+                            // Fechar o modal
+                            var eventModal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
+                            eventModal.hide();
                         } else {
-                            alert(data.message);
+                            alert('Erro ao salvar evento: ' + data.message);
                         }
                     })
-                    .catch(error => console.error('Erro:', error));
+                    .catch(error => {
+                        console.error('Erro ao salvar evento:', error);
+                        alert('Erro ao salvar evento. Verifique o console para mais detalhes.');
+                    });
                 } else {
-                    alert('O título, horário e horário final do evento são obrigatórios.');
+                    alert('Por favor, preencha todos os campos.');
                 }
             });
         });
