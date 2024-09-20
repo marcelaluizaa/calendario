@@ -25,6 +25,8 @@ try {
     // Buscar os eventos
     $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+
+    
     // Retornar os eventos em formato JSON
     echo json_encode($events);
 

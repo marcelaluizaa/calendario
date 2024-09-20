@@ -127,7 +127,7 @@
                 },
                 events: 'fetch_eventos.php', // Carregar eventos já existentes
                 select: function(info) {
-                    document.getElementById('eventForm').reset();
+
                     document.getElementById('eventStart').value = info.startStr;
                     document.getElementById('eventEndTime').value = ''; // Limpar horário final
                     populateHorarios(info.startStr); // Atualizar horários de acordo com o dia selecionado
