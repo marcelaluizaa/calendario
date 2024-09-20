@@ -16,6 +16,7 @@
             background-color: #f8f9fa;
         }
         #calendar-container {
+<<<<<<< HEAD
             max-width: 2000px;
             margin: 0 auto;
         }
@@ -39,8 +40,52 @@
         /* Ajusta a altura da área de conteúdo para eventos */
         .fc-daygrid-day-top {
             height: 10px; /* Ajuste a altura do cabeçalho do dia se necessário */
+=======
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        #calendar {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .fc-daygrid-day-frame {
+            position: relative;
+        }
+        .time-slot {
+            height: calc(100% / 14); /* Divida o dia em 14 partes */
+            border: 1px solid #ddd;
+            position: absolute;
+            left: 0;
+            right: 0;
+            overflow: hidden;
+        }
+        .time-slot:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+        .time-slot.selected {
+            background-color: #ffdddd;
+        }
+        .time-slot .time-label {
+            position: absolute;
+            top: 0;
+            left: 5px;
+            color: #333;
+            font-size: 12px;
+        }
+        .time-slot .event-info {
+            position: absolute;
+            top: 50%;
+            left: 5px;
+            color: #fff;
+            background-color: #d9534f;
+            padding: 2px 5px;
+            border-radius: 3px;
+            transform: translateY(-50%);
+            font-size: 12px;
+>>>>>>> cde088375a51c20d748577685ee828c54e1fad07
         }
     </style>
+
 </head>
 <body>
     <div id="calendar-container">
@@ -102,6 +147,7 @@
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
+<<<<<<< HEAD
                    
                 },
                 events: {
@@ -141,14 +187,70 @@
                     dayCells.forEach(cell => {
                         cell.style.height = `${maxHeight}px`;
                     });
+=======
+                    
+                },
+                events: 'fetch_eventos.php', // Carregar eventos já existentes
+                select: function(info) {
+                    document.getElementById('eventForm').reset();
+                    document.getElementById('eventStart').value = info.startStr;
+                    document.getElementById('eventEndTime').value = ''; // Limpar horário final
+                    populateHorarios(info.startStr); // Atualizar horários de acordo com o dia selecionado
+                    var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                    eventModal.show();
+                },
+                eventContent: function(arg) {
+                    let customHtml = document.createElement('div');
+                    customHtml.innerHTML = `<b>${arg.event.title}</b><br>Horário selecionado: ${arg.event.extendedProps.horario}`;
+                    return { domNodes: [customHtml] };
+>>>>>>> cde088375a51c20d748577685ee828c54e1fad07
                 }
             });
 
             calendar.render();
 
+<<<<<<< HEAD
             // Função para atualizar a lista de horários disponíveis
             function updateAvailableTimes(date) {
                 fetch(`fetch_available_times.php?date=${date}`)
+=======
+            // Função para gerar horários
+            function gerarHorarios(inicio, intervalo, fim1, fim2) {
+                let horarios = [];
+                let horaAtual = new Date(inicio);
+
+                // Intervalo 1: de 08:30 até 11:25
+                while (horaAtual <= fim1) {
+                    let horas = String(horaAtual.getHours()).padStart(2, '0');
+                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
+                    horarios.push(`${horas}:${minutos}`);
+                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
+                }
+
+                // Pular intervalo de almoço: de 11:25 até 13:10
+                horaAtual = new Date(fim1);
+                horaAtual.setHours(13, 10, 0, 0);
+
+                // Intervalo 2: de 13:10 até 17:15
+                while (horaAtual <= fim2) {
+                    let horas = String(horaAtual.getHours()).padStart(2, '0');
+                    let minutos = String(horaAtual.getMinutes()).padStart(2, '0');
+                    horarios.push(`${horas}:${minutos}`);
+                    horaAtual.setMinutes(horaAtual.getMinutes() + intervalo);
+                }
+
+                return horarios;
+            }
+
+            // Função para atualizar a lista de horários disponíveis
+<<<<<<< HEAD
+            function populateHorarios(dataSelecionada) {
+                fetch('get_horarios_ocupados.php?data=' + dataSelecionada)
+=======
+            function populateHorarios() {
+                fetch('get_horarios_ocupados.php')
+>>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
+>>>>>>> cde088375a51c20d748577685ee828c54e1fad07
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
@@ -215,12 +317,17 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === "success") {
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> cde088375a51c20d748577685ee828c54e1fad07
                             // Se o evento for salvo corretamente, adicionar ao calendário
                             var novoEvento = {
                                 id: data.evento.id,
                                 title: data.evento.title,
                                 start: data.evento.start,
                                 end: data.evento.end,
+<<<<<<< HEAD
                                 color: data.evento.color
                             };
                             calendar.addEvent(novoEvento);
@@ -228,6 +335,24 @@
                             // Fechar o modal
                             var eventModal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
                             eventModal.hide();
+=======
+                                color: data.evento.color,
+                                extendedProps: {
+                                    horario: data.evento.horario
+                                }
+                            };
+
+                            // Adiciona o evento ao calendário
+                            calendar.addEvent(novoEvento);
+
+                            // Fecha o modal
+                            var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                            eventModal.hide();
+=======
+                            // Redirecionar para lista_recebidos.php após sucesso
+                            window.location.href = 'lista_recebidos.php';
+>>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
+>>>>>>> cde088375a51c20d748577685ee828c54e1fad07
                         } else {
                             alert('Erro ao salvar evento: ' + data.message);
                         }
