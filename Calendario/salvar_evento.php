@@ -1,20 +1,19 @@
 <?php
-// Habilitar exibição de erros (para desenvolvimento)
-// Remova ou comente estas linhas em produção
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Configurações do banco de dados
+// Configurações de conexão com o banco de dados
 $host = "localhost";
 $dbname = "ca";
 $user = "root";
 $password = "";
 
+// Habilitar exibição de erros (para desenvolvimento)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 
 try {
-    // Conexão com o banco de dados usando PDO
+    // Conectar ao banco de dados
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -23,46 +22,39 @@ try {
 
     // Verificar se os dados foram recebidos corretamente
     if (!empty($data)) {
-        // Capturar os dados do evento
         $titulo = $data['titulo'];
-        $horario = $data['horario']; // Horário inicial (formato HH:MM)
         $cor = isset($data['cor']) ? $data['cor'] : '#007bff';
-        $inicio = $data['inicio']; // Data de início do evento (YYYY-MM-DD)
-        $fim_horario = $data['fim_horario']; // Horário final (formato HH:MM)
+        $inicio = $data['inicio'];
+        $fim_horario = $data['fim_horario'];
+        $horario = $data['horario'];
 
-        // Verificar se o horário já está ocupado
-        $sqlCheck = "SELECT COUNT(*) FROM calendario 
-                     WHERE inicio = :inicio 
-                     AND (horario < :fim_horario AND fim_horario > :horario)";
+        // Verificar se o horário já está ocupado para a data
+        $sqlCheck = "SELECT COUNT(*) FROM calendario WHERE inicio = :inicio AND horario = :horario";
         $stmtCheck = $conn->prepare($sqlCheck);
         $stmtCheck->bindParam(':inicio', $inicio);
         $stmtCheck->bindParam(':horario', $horario);
-        $stmtCheck->bindParam(':fim_horario', $fim_horario);
         $stmtCheck->execute();
         $count = $stmtCheck->fetchColumn();
 
         if ($count > 0) {
-            // Horário já está ocupado
-            echo json_encode(["status" => "error", "message" => "Horário indisponível."]);
+            // Retornar uma mensagem de erro se o horário já estiver ocupado
+            echo json_encode(["status" => "error", "message" => "Horário ocupado"]);
         } else {
             // Inserir os dados no banco de dados
-            $sqlInsert = "INSERT INTO calendario (titulo, horario, cor, inicio, fim_horario) 
-                          VALUES (:titulo, :horario, :cor, :inicio, :fim_horario)";
+            $sqlInsert = "INSERT INTO calendario (titulo, cor, inicio, fim_horario, horario) 
+                          VALUES (:titulo, :cor, :inicio, :fim_horario, :horario)";
             $stmtInsert = $conn->prepare($sqlInsert);
 
-            // Vincular os parâmetros aos valores
+            // Vincular os parâmetros
             $stmtInsert->bindParam(':titulo', $titulo);
-            $stmtInsert->bindParam(':horario', $horario);
             $stmtInsert->bindParam(':cor', $cor);
             $stmtInsert->bindParam(':inicio', $inicio);
             $stmtInsert->bindParam(':fim_horario', $fim_horario);
+            $stmtInsert->bindParam(':horario', $horario);
 
-            // Executar a consulta e verificar o resultado
+            // Execução da inserção
             if ($stmtInsert->execute()) {
-                // Obter o ID do evento recém inserido
                 $eventoId = $conn->lastInsertId();
-
-                // Retornar os dados do evento salvo
                 echo json_encode([
                     "status" => "success",
                     "message" => "Evento salvo com sucesso!",
@@ -76,16 +68,13 @@ try {
                     ]
                 ]);
             } else {
-                // Retornar mensagem de erro
                 echo json_encode(["status" => "error", "message" => "Erro ao salvar o evento."]);
             }
         }
     } else {
-        // Retornar mensagem de erro por dados incompletos
         echo json_encode(["status" => "error", "message" => "Dados incompletos."]);
     }
 } catch (PDOException $e) {
-    // Retornar mensagem de erro de conexão ou consulta
     echo json_encode(["status" => "error", "message" => "Erro no servidor: " . $e->getMessage()]);
 }
 ?>

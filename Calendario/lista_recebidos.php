@@ -46,6 +46,22 @@ try {
 </head>
 <body>
     <div class="container">
+                    <!-- Verificar se há uma mensagem na URL -->
+                    <?php if (isset($_GET['msg'])): ?>
+                <?php if ($_GET['msg'] == 'deletado'): ?>
+                    <div class="alert alert-success" role="alert">
+                        Evento deletado com sucesso!
+                    </div>
+                <?php elseif ($_GET['msg'] == 'nao_encontrado'): ?>
+                    <div class="alert alert-warning" role="alert">
+                        Evento não encontrado.
+                    </div>
+                <?php elseif ($_GET['msg'] == 'erro'): ?>
+                    <div class="alert alert-danger" role="alert">
+                        Erro ao deletar o evento.
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
         <div class="especialidade">
             <h1>Lista - Recebidos</h1>
         </div>
@@ -82,8 +98,8 @@ try {
                            ?>
                        </td>
                        <td><?php echo htmlspecialchars(date('H:i', strtotime($evento['fim_horario']))); ?></td>
-                       <td><a class="btn btn-primary" href="alterar.php?id_evento=<?php echo htmlspecialchars($evento['id_evento']); ?>">Alterar</a></td>
-                       <td><a class="btn btn-danger" href="deletar.php?id_evento=<?php echo htmlspecialchars($evento['id_evento']); ?>" onclick="return confirm('Tem certeza que deseja deletar este evento?');">Deletar</a></td>
+                       <td><a class="btn btn-primary" href="alterar_calendario.php?id_evento=<?php echo htmlspecialchars($evento['id_evento']); ?>">Alterar</a></td>
+                       <td><a class="btn btn-danger" href="deletar_calendario.php?id_evento=<?php echo htmlspecialchars($evento['id_evento']); ?>" onclick="return confirm('Tem certeza que deseja deletar este evento?');">Deletar</a></td>
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
