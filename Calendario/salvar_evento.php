@@ -1,111 +1,60 @@
 <?php
+// Configurações de conexão com o banco de dados
+$host = "localhost";
+$dbname = "ca";
+$user = "root";
+$password = "";
+
+// Habilitar exibição de erros (para desenvolvimento)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 
-// Configurações de conexão com o banco de dados
-$host = 'localhost'; // Substitua pelo seu host
-$dbname = 'ca'; // Substitua pelo seu banco de dados
-$username = 'root'; // Substitua pelo seu usuário
-$password = ''; // Substitua pela sua senha
-
 try {
-    // Conexão com o banco de dados
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Conectar ao banco de dados
+    $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Obtém os dados JSON do POST
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Valida os dados
+    // Verificar se os dados foram recebidos corretamente
     if (isset($data['titulo'], $data['inicio'], $data['fim_horario'], $data['horario'], $data['cor'])) {
         $titulo = $data['titulo'];
+        $cor = isset($data['cor']) ? $data['cor'] : '#007bff';
         $inicio = $data['inicio'];
         $fim_horario = $data['fim_horario'];
         $horario = $data['horario'];
-        $cor = $data['cor'];
 
-<<<<<<< HEAD
-        // Verifica se o horário já está ocupado
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) 
-            FROM calendario
-            WHERE DATE(inicio) = DATE(:inicio) AND horario = :horario
-        ");
-        $stmt->bindParam(':inicio', $inicio);
-        $stmt->bindParam(':horario', $horario);
-        $stmt->execute();
-        $count = $stmt->fetchColumn();
-=======
         // Verificar se o horário já está ocupado
-        $sqlCheck = "SELECT COUNT(*) FROM calendario 
-                     WHERE inicio = :inicio 
-<<<<<<< HEAD
-                     AND (horario < :fim_horario AND fim_horario > :horario)";
-=======
-                     AND (horario <= :fim_horario AND fim_horario >= :horario)";
->>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
+        $sqlCheck = "SELECT COUNT(*) FROM calendario WHERE inicio = :inicio AND horario = :horario";
         $stmtCheck = $conn->prepare($sqlCheck);
         $stmtCheck->bindParam(':inicio', $inicio);
         $stmtCheck->bindParam(':horario', $horario);
-        $stmtCheck->bindParam(':fim_horario', $fim_horario);
         $stmtCheck->execute();
         $count = $stmtCheck->fetchColumn();
->>>>>>> cde088375a51c20d748577685ee828c54e1fad07
 
         if ($count > 0) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Horário já reservado.'
-            ]);
-            exit;
-        }
-
-        // Prepara e executa a inserção no banco de dados
-        $sql = "INSERT INTO calendario (titulo, inicio, fim_horario, horario, cor) VALUES (:titulo, :inicio, :fim_horario, :horario, :cor)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':titulo', $titulo);
-        $stmt->bindParam(':inicio', $inicio);
-        $stmt->bindParam(':fim_horario', $fim_horario);
-        $stmt->bindParam(':horario', $horario);
-        $stmt->bindParam(':cor', $cor);
-
-        if ($stmt->execute()) {
-            // Recupera o último ID inserido
-            $id = $pdo->lastInsertId();
-
-            // Retorna a resposta de sucesso
-            echo json_encode([
-                'status' => 'success',
-                'evento' => [
-                    'id' => $id,
-                    'title' => $titulo,
-                    'start' => $inicio,
-                    'end' => $fim_horario,
-                    'color' => $cor
-                ]
-            ]);
+            // Retornar uma mensagem de erro se o horário já estiver ocupado
+            echo json_encode(["status" => "error", "message" => "Horário ocupado"]);
         } else {
-<<<<<<< HEAD
-            throw new Exception('Erro ao salvar o evento.');
-=======
             // Inserir os dados no banco de dados
-            $sqlInsert = "INSERT INTO calendario (titulo, horario, cor, inicio, fim_horario) 
-                          VALUES (:titulo, :horario, :cor, :inicio, :fim_horario)";
+            $sqlInsert = "INSERT INTO calendario (titulo, cor, inicio, fim_horario, horario) 
+                          VALUES (:titulo, :cor, :inicio, :fim_horario, :horario)";
             $stmtInsert = $conn->prepare($sqlInsert);
 
-            // Vincular os parâmetros aos valores
+            // Vincular os parâmetros
             $stmtInsert->bindParam(':titulo', $titulo);
-            $stmtInsert->bindParam(':horario', $horario);
             $stmtInsert->bindParam(':cor', $cor);
             $stmtInsert->bindParam(':inicio', $inicio);
             $stmtInsert->bindParam(':fim_horario', $fim_horario);
+            $stmtInsert->bindParam(':horario', $horario);
 
-            // Executar a consulta e verificar o resultado
+            // Execução da inserção
             if ($stmtInsert->execute()) {
-<<<<<<< HEAD
-                // Obter o ID do evento recém inserido
                 $eventoId = $conn->lastInsertId();
-
-                // Retornar os dados do evento salvo
                 echo json_encode([
                     "status" => "success",
                     "message" => "Evento salvo com sucesso!",
@@ -118,30 +67,14 @@ try {
                         "horario" => $horario
                     ]
                 ]);
-=======
-                // Retornar resposta de sucesso
-                echo json_encode(["status" => "success", "message" => "Evento salvo com sucesso!"]);
->>>>>>> 8d00f506d5cc340cc56621bf36b1300189d4ec60
             } else {
-                // Retornar mensagem de erro
                 echo json_encode(["status" => "error", "message" => "Erro ao salvar o evento."]);
             }
->>>>>>> cde088375a51c20d748577685ee828c54e1fad07
         }
     } else {
-        throw new Exception('Dados incompletos.');
+        echo json_encode(["status" => "error", "message" => "Dados incompletos."]);
     }
 } catch (PDOException $e) {
-    // Erro de conexão ou execução SQL
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Erro no banco de dados: ' . $e->getMessage()
-    ]);
-} catch (Exception $e) {
-    // Erro geral
-    echo json_encode([
-        'status' => 'error',
-        'message' => $e->getMessage()
-    ]);
+    echo json_encode(["status" => "error", "message" => "Erro no servidor: " . $e->getMessage()]);
 }
 ?>
